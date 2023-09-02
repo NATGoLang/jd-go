@@ -13,12 +13,11 @@ import (
 
 func main() {
 	mConfig, err := configs.InitConfig()
-	 
 	if err != nil {
 		panic("failed to read config")
 	}
 
-	db, err := gorm.Open(mysql.Open(mConfig.Database.Dsn), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(mConfig.GetDSNString()), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
