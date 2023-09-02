@@ -2,6 +2,7 @@ package main
 
 import (
 	"example/api"
+	"example/configs"
 	"example/model"
 	"example/repository"
 
@@ -11,9 +12,13 @@ import (
 )
 
 func main() {
-	dsn := "<user_name>:<password>@tcp(127.0.0.1:3306)/mysql?charset=utf8mb4&parseTime=True&loc=Local"
+	mConfig, err := configs.InitConfig()
+	 
+	if err != nil {
+		panic("failed to read config")
+	}
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(mConfig.Database.Dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
