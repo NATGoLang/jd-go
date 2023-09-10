@@ -16,8 +16,12 @@ func main() {
 	if err != nil {
 		panic("failed to read config")
 	}
-
-	db, err := gorm.Open(mysql.Open(mConfig.GetDSNString()), &gorm.Config{})
+	databaseDSNString, err := mConfig.GetDSNString()
+	if err != nil {
+		panic("failed to get DSN String")
+	}
+	
+	db, err := gorm.Open(mysql.Open(databaseDSNString), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}

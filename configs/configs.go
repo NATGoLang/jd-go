@@ -2,6 +2,7 @@ package configs
 
 import (
 	"bytes"
+	"errors"
 	"os"
 
 	"gopkg.in/yaml.v2"
@@ -43,29 +44,38 @@ func InitConfig() (Config, error) {
 // referencing the Config.FormatDSN() method in [github.com/go-sql-driver/mysql]
 // just added the params we are using, may need to add some more later
 // more details: [https://github.com/go-sql-driver/mysql#dsn-data-source-name]
-func (cfg *Config) GetDSNString() string {
+// "root:26711153@tcp(127.0.0.1:3306)/mysql?charset=utf8mb4&parseTime=True&loc=Local"
+func (cfg *Config) GetDSNString() (string, error) {
 	dbCfg := cfg.Database
 
 	var buf bytes.Buffer
-
+	
 	// [username[:password]@]
-	if dbCfg.Credentials.Username != "" {
-		buf.WriteString(dbCfg.Credentials.Username)
-		if dbCfg.Credentials.Password != "" {
-			buf.WriteByte(':')
-			buf.WriteString(dbCfg.Credentials.Password)
-		}
-		buf.WriteByte('@')
+	if dbCfg.Credentials.Username == "" {
+		return "", errors.New("username not found in config file")
+	}
+	buf.WriteString(dbCfg.Credentials.Username)
+
+	if dbCfg.Credentials.Password == "" {
+		return "", errors.New("password not found in config file")
+	}
+	buf.WriteByte(':')
+	buf.WriteString(dbCfg.Credentials.Password)
+	buf.WriteByte('@')
+	
+	// [protocol[(address)]]
+	if dbCfg.Net == "" {
+		return "", errors.New("net settings not found in config file")
+	}
+	buf.WriteString(dbCfg.Net)
+	if dbCfg.Addr != "" {
+		buf.WriteByte('(')
+		buf.WriteString(dbCfg.Addr)
+		buf.WriteByte(')')
 	}
 
-	// [protocol[(address)]]
-	if dbCfg.Net != "" {
-		buf.WriteString(dbCfg.Net)
-		if dbCfg.Addr != "" {
-			buf.WriteByte('(')
-			buf.WriteString(dbCfg.Addr)
-			buf.WriteByte(')')
-		}
+	if dbCfg.DBName == "" {
+		return "", errors.New("database name not found in config file")
 	}
 
 	// db name
@@ -73,7 +83,6 @@ func (cfg *Config) GetDSNString() string {
 	buf.WriteString(dbCfg.DBName)
 
 	hasParam := false
-
 	if dbCfg.Charset != "" {
 		writeDSNParam(&buf, &hasParam, "charset", dbCfg.Charset)
 	}
@@ -86,7 +95,7 @@ func (cfg *Config) GetDSNString() string {
 		writeDSNParam(&buf, &hasParam, "parseTime", "true")
 	}
 
-	return buf.String()
+	return buf.String(), nil
 }
 
 func writeDSNParam(buf *bytes.Buffer, hasParam *bool, key string, value string) {
