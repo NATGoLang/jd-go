@@ -40,3 +40,25 @@ func (ah *AuthHandler) SignUp(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
+
+// TODO return session token in response
+func (ah *AuthHandler) SignIn(c *gin.Context) {
+	var credentialsDto models.Credentials
+	if err := c.BindJSON(&credentialsDto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	storedPassword, err := ah.AuthRepo.FindStoredPasswordByEmail(credentialsDto.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err = bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(credentialsDto.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}

@@ -33,6 +33,7 @@ func main() {
 
 	router := gin.Default()
 	router.POST("/signup", authHandler.SignUp)
+	router.POST("/signin", authHandler.SignIn)
 
 	router.GET("/users/:email", userHandler.GetUser)
 	// commented for now, should be modified to put users
