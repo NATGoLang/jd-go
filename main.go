@@ -24,6 +24,8 @@ func main() {
 
 	// Migrate the schema
 	db.AutoMigrate(&model.User{})
+	db.AutoMigrate(&model.SessionToken{})
+	db.AutoMigrate(&model.RefreshToken{})
 
 	authRepo := repository.NewAuthRepository(db)
 	authHandler := api.NewAuthHandler(authRepo)

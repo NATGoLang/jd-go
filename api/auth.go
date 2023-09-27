@@ -41,24 +41,35 @@ func (ah *AuthHandler) SignUp(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-// TODO return session token in response
 func (ah *AuthHandler) SignIn(c *gin.Context) {
-	var credentialsDto models.Credentials
-	if err := c.BindJSON(&credentialsDto); err != nil {
+	var credentialsInDto models.Credentials
+	if err := c.BindJSON(&credentialsInDto); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	storedPassword, err := ah.AuthRepo.FindStoredPasswordByEmail(credentialsDto.Email)
+	userId, storedPassword, err := ah.AuthRepo.FindStoredPasswordByEmail(credentialsInDto.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err = bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(credentialsDto.Password)); err != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(credentialsInDto.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.Status(http.StatusOK)
+	sessionToken, refreshToken, err := ah.AuthRepo.CreateSession(userId)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	//TBD: should refresh token also have expired_at?
+	c.JSON(http.StatusOK, models.SessionTokenOutDto{
+		SessionToken:     sessionToken.Value,
+		SessionExpiredAt: sessionToken.ExpiredAt,
+		RefreshToken:     refreshToken.Value,
+		RefreshExpiredAt: refreshToken.ExpiredAt,
+	})
 }
