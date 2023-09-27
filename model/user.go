@@ -8,7 +8,7 @@ import (
 
 type User struct {
 	gorm.Model
+	Credentials
 	Name     string
-	Email    string     `gorm:"unique"`
 	Birthday *time.Time `gorm:"default:null"`
 }

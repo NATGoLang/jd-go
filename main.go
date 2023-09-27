@@ -24,12 +24,22 @@ func main() {
 
 	// Migrate the schema
 	db.AutoMigrate(&model.User{})
+	db.AutoMigrate(&model.SessionToken{})
+	db.AutoMigrate(&model.RefreshToken{})
+
+	authRepo := repository.NewAuthRepository(db)
+	authHandler := api.NewAuthHandler(authRepo)
 
 	userRepo := repository.NewUserRepository(db)
 	userHandler := api.NewUserHandler(userRepo)
+
 	router := gin.Default()
+	router.POST("/signup", authHandler.SignUp)
+	router.POST("/signin", authHandler.SignIn)
+
 	router.GET("/users/:email", userHandler.GetUser)
-	router.POST("/users", userHandler.PostUser)
+	// commented for now, should be modified to put users
+	// router.POST("/users", userHandler.PostUser)
 
 	router.Run("localhost:8080")
 }
